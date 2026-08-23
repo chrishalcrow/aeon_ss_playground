@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import dartsort
-
 from aeon_ss_playground.broo_parser import parse_args
 from aeon_ss_playground.io import load_recording
 
@@ -18,12 +16,14 @@ output_folder =  args.output_folder
 if experiment == "abcEphys01":
     root = Path("/ceph/aeon/aeon/data/raw/AEONX1/abcEphys01")
 
-si_sorter_name = sorter_name.split('_')[0]
+si_sorter_name = sorter_protocol.split('_')[0]
 
-sorter_output_folder = output_folder / Path(f"{start:%Y-%m-%dT%H-%M-%S}_{end:%Y-%m-%dT%H-%M-%S}/shank_{shank_id}")
+sorter_output_folder = output_folder / Path(f"{start_time:%Y-%m-%dT%H-%M-%S}_{end_time:%Y-%m-%dT%H-%M-%S}/shank_{shank_id}")
 sorter_output_folder.mkdir(parents=True)
 
-rec = load_recording(root, start, end, probe_name="ProbeB")
+rec = load_recording(root, start_time, end_time, probe_name="ProbeB", shank_id=shank_id)
+
+import dartsort
 
 if si_sorter_name == "dartsort":
 
