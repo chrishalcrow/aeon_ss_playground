@@ -8,7 +8,27 @@ experiment = "abcEphys01"
 probe_name = "ProbeB"
 shank_id = 2
 sorter_protocol = "dartsort_A"
-output_folder =  Path("dartsort_native_output")
+
+si_sorter_name = sorter_protocol.split('_')[0]
+
+if si_sorter_name == "dartsort":
+    output_folder =  Path("dartsort_native_output")
+    gpu=True
+    gpu_queue=True
+    cores=4
+
+elif si_sorter_name == "kilosort":
+    gpu=True
+    gpu_queue=True
+    cores=4
+    output_folder =  Path("kilosort_si_output")
+
+elif si_sorter_name == "lupin":
+    gpu=False
+    gpu_queue=False
+    cores=8
+
+    output_folder =  Path("lupin_si_output")
 
 start_end_times = [
     ["2026-06-26 00:00:00", "2026-06-26 12:00:00"],
@@ -30,8 +50,8 @@ make_and_run_python_script(
     "spike_sort", 
     python_arg, 
     hours=24, 
-    cores=8, 
     mem=64, 
-    gpu=False, 
-    gpu_queue=False
+    cores=cores, 
+    gpu=gpu, 
+    gpu_queue=gpu_queue
 )

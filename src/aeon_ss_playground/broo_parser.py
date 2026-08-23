@@ -14,6 +14,12 @@ def parse_args():
         help="Experiment identifier",
     )
     parser.add_argument(
+        "--cores",
+        type=int,
+        required=True,
+        help="cpu cores",
+    )
+    parser.add_argument(
         "--probe-name",
         type=str,
         required=True,
