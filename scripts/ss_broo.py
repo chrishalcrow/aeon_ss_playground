@@ -12,10 +12,10 @@ sorter_protocol = "dartsort_A"
 si_sorter_name = sorter_protocol.split('_')[0]
 
 if si_sorter_name == "dartsort":
-    output_folder =  Path("dartsort_native_output")
     gpu=True
     gpu_queue=True
     cores=4
+    output_folder =  Path("dartsort_native_output")
 
 elif si_sorter_name == "kilosort":
     gpu=True
@@ -27,7 +27,6 @@ elif si_sorter_name == "lupin":
     gpu=False
     gpu_queue=False
     cores=8
-
     output_folder =  Path("lupin_si_output")
 
 start_end_times = [
@@ -44,6 +43,7 @@ python_arg = f"""scripts/spike_sort.py \
 --output-folder {output_folder} \
 --start-time "{start_time}" \
 --end-time "{end_time}" \
+--cores {cores} \
 """
 
 make_and_run_python_script(
