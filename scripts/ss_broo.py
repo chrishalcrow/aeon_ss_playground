@@ -7,7 +7,7 @@ from aeon_ss_playground.broo_parser import parse_args
 experiment = "abcEphys01"
 probe_name = "ProbeB"
 shank_id = 2
-sorter_protocol = "dartsortA"
+sorter_protocol = "dartsort_A"
 output_folder =  Path("dartsort_native_output")
 
 start_end_times = [
