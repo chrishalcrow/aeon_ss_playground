@@ -4,4 +4,16 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "broo-helper",
+    "dartsort>=0.5.23",
+    "kilosort>=4.1.7",
+    "spikeinterface>=0.104.8",
+]
+
+[build-system]
+requires = ["setuptools>=78.0.2"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv.sources]
+broo-helper = { path = "../broo_helper" }
