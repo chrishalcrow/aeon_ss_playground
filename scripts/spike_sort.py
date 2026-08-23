@@ -19,7 +19,7 @@ if experiment == "abcEphys01":
 si_sorter_name = sorter_protocol.split('_')[0]
 
 sorter_output_folder = output_folder / Path(f"{start_time:%Y-%m-%dT%H-%M-%S}_{end_time:%Y-%m-%dT%H-%M-%S}/shank_{shank_id}")
-sorter_output_folder.mkdir(parents=True)
+sorter_output_folder.mkdir(parents=True, exist_ok=True)
 
 rec = load_recording(root, start_time, end_time, probe_name="ProbeB", shank_id=shank_id)
 
