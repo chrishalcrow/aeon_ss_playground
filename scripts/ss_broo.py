@@ -36,7 +36,7 @@ start_end_times = [
 
 start_time, end_time = start_end_times[0]
 
-python_arg = f"""spike_sort.py \
+python_arg = f"""scripts/spike_sort.py \
 --experiment {experiment} \
 --probe-name {probe_name} \
 --shank-id {shank_id} \
