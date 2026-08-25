@@ -178,7 +178,10 @@ def make_template_library(recording_raw, templates_folder):
     )
     clustering_kwargs["seed"] = seed
 
-    clustering_kwargs["debug_folder"] = sorter_output_folder / 'debug'
+    clustering_kwargs["debug_folder"] = templates_folder / 'debug'
+
+    # sam suggests playing with this
+    clustering_kwargs["isocut_threshold"] = 2.0
 
     unit_ids, clustering_label, more_outs = find_clusters_from_peaks(
         recording,
