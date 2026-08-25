@@ -33,6 +33,8 @@ if sorter_protocol == "lupin_T":
 
     make_template_library(rec, templates_folder)
 
+    quit()
+
 if si_sorter_name == "dartsort":
 
     import dartsort
