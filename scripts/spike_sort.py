@@ -26,6 +26,13 @@ sorter_output_folder.mkdir(parents=True, exist_ok=True)
 rec = load_recording(root, start_time, end_time, probe_name="ProbeB", shank_id=shank_id)
 si.set_global_job_kwargs(n_jobs=cores)
 
+if sorter_protocol == "lupin_T":
+    from aeon_ss_playground.lupin import make_template_library
+
+    templates_folder = sorter_output_folder / "templates.zarr"
+
+    make_template_library(rec, templates_folder)
+
 if si_sorter_name == "dartsort":
 
     import dartsort
@@ -55,6 +62,7 @@ elif si_sorter_name == "lupin":
 
     sorter_output = sorter_output_folder / 'lupin_si_output'
     sorting = si.run_sorter(sorter_name=si_sorter_name, recording=rec, apply_motion_correction=False, verbose=True, remove_existing_folder=True, folder=sorter_output)
+
 
 preprocessed_recording_for_analyzer = si.common_reference(si.bandpass_filter(si.unsigned_to_signed(rec)))
 
