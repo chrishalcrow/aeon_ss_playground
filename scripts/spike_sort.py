@@ -53,9 +53,9 @@ if si_sorter_name == "dartsort":
         ),
     )
 
-elif si_sorter_name == "kilosort":
+elif si_sorter_name == "kilosort4":
 
-    sorter_output = sorter_output_folder / 'kilosort_si_output'
+    sorter_output = sorter_output_folder / 'kilosort4_si_output'
     sorting = si.run_sorter(sorter_name=si_sorter_name, recording=rec, do_correction=False, use_binary_file=False, verbose=True, remove_existing_folder=True, folder=sorter_output)
     
 elif si_sorter_name == "lupin":
