@@ -15,6 +15,23 @@ sorter_protocol = args.sorter_protocol
 output_folder =  args.output_folder
 cores = args.cores
 
+
+generic_postprocessing = {
+    "unit_locations": {},
+    "random_spikes": {},
+    "noise_levels": {},
+    "waveforms": {},
+    "templates": {},
+    "spike_amplitudes": {},
+    "amplitude_scalings": {},
+    "isi_histograms": {},
+    "spike_locations": {},
+    "correlograms": {},
+    "template_similarity": {},
+    "quality_metrics": {},
+    "template_metrics": {},
+}
+
 if experiment == "abcEphys01":
     root = Path("/ceph/aeon/aeon/data/raw/AEONX1/abcEphys01")
 
@@ -34,6 +51,16 @@ if sorter_protocol == "lupin_T":
     make_template_library(rec, templates_folder)
 
     quit()
+
+elif sorter_protocol == "lupin_TM":
+    from aeon_ss_playground.lupin import do_template_matching
+
+    templates_folder = Path("/ceph/scratch/chalcrow/fromgit/aeon_ss_playground/lupin_si_output/2026-06-26T12-00-00_2026-06-27T12-00-00/shank_2/templates.zarr")
+
+    old_analyzer: si.SortingAnalyzer = do_template_matching(rec, templates_folder, sorter_output_folder)
+    preprocessed_recording_for_analyzer = old_analyzer._recording
+    sorting = old_analyzer.sorting
+
 
 if si_sorter_name == "dartsort":
 
@@ -77,20 +104,5 @@ analyzer = si.create_sorting_analyzer(
     radius_um=70,
 )
 
-generic_postprocessing = {
-    "unit_locations": {},
-    "random_spikes": {},
-    "noise_levels": {},
-    "waveforms": {},
-    "templates": {},
-    "spike_amplitudes": {},
-    "amplitude_scalings": {},
-    "isi_histograms": {},
-    "spike_locations": {},
-    "correlograms": {},
-    "template_similarity": {},
-    "quality_metrics": {},
-    "template_metrics": {},
-}
 
-analyzer.compute(generic_postprocessing)
+

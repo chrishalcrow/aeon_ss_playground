@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+import numpy as np
+
 import spikeinterface.full as si
 
 from spikeinterface.core import (
@@ -7,8 +9,10 @@ from spikeinterface.core import (
     estimate_templates_with_accumulator,
     Templates,
     ms_to_samples,
-    get_noise_levels
+    get_noise_levels,
 )
+
+from spikeinterface.core.base import minimum_spike_dtype
 
 # STEP 2
 from spikeinterface.sortingcomponents.tools import (
@@ -29,56 +33,48 @@ from spikeinterface.sortingcomponents.tools import (
 from spikeinterface.sortingcomponents.matching import find_spikes_from_templates
 from spikeinterface.sorters.internal.spyking_circus2 import final_cleaning_circus
 
+from spikeinterface.sortingcomponents.tools import cache_preprocessing, clean_cache_preprocessing
 
-def make_template_library(recording_raw, templates_folder):
 
-    _default_params = {
-        "apply_preprocessing": True,
-        "preprocessing_dict": None,
-        "apply_motion_correction": True,
-        "motion_correction_preset": "dredge_fast",
-        "clustering_ms_before": 0.3,
-        "clustering_ms_after": 1.3,
-        "whitening_radius_um": 100.0,
-        "detection_radius_um": 50.0,
-        "features_radius_um": 120.0,
-        "split_radius_um": 60.0,
-        "template_radius_um": 100.0,
-        "merge_similarity_lag_ms": 0.5,
-        "freq_min": 150.0,
-        "freq_max": 7000.0,
-        "cache_preprocessing_mode": "auto",
-        "peak_sign": "neg",
-        "detect_threshold": 5.0,
-        "n_peaks_per_channel": 5000,
-        "n_svd_components_per_channel": 5,
-        "n_pca_features": 4,
-        "clustering_recursive_depth": 3,
-        "ms_before": 1.0,
-        "ms_after": 2.5,
-        "template_sparsify_threshold": 1.0,
-        "template_min_snr_ptp": 4.0,
-        "template_max_jitter_ms": 0.2,
-        "template_matching_engine": "wobble",
-        "min_firing_rate": 0.1,
-        "gather_mode": "memory",
-        "job_kwargs": {},
-        "seed": None,
-        "save_array": True,
-        "debug": False,
-    }
+_default_params = {
+    "apply_preprocessing": True,
+    "preprocessing_dict": None,
+    "apply_motion_correction": True,
+    "motion_correction_preset": "dredge_fast",
+    "clustering_ms_before": 0.3,
+    "clustering_ms_after": 1.3,
+    "whitening_radius_um": 100.0,
+    "detection_radius_um": 50.0,
+    "features_radius_um": 120.0,
+    "split_radius_um": 60.0,
+    "template_radius_um": 100.0,
+    "merge_similarity_lag_ms": 0.5,
+    "freq_min": 150.0,
+    "freq_max": 7000.0,
+    "cache_preprocessing_mode": "auto",
+    "peak_sign": "neg",
+    "detect_threshold": 5.0,
+    "n_peaks_per_channel": 5000,
+    "n_svd_components_per_channel": 5,
+    "n_pca_features": 4,
+    "clustering_recursive_depth": 3,
+    "ms_before": 1.0,
+    "ms_after": 2.5,
+    "template_sparsify_threshold": 1.0,
+    "template_min_snr_ptp": 4.0,
+    "template_max_jitter_ms": 0.2,
+    "template_matching_engine": "wobble",
+    "min_firing_rate": 0.1,
+    "gather_mode": "memory",
+    "job_kwargs": {},
+    "seed": None,
+    "save_array": True,
+    "debug": False,
+}
 
-    verbose = True
-
-    params = _default_params
-
-    seed = 1205
-
-    num_chans = recording_raw.get_num_channels()
-    sampling_frequency = recording_raw.get_sampling_frequency()
+def preprocess_recording(recording_raw, params, seed):
 
     # STEP 1: preprocess the recording
-
     recording = si.bandpass_filter(
         recording_raw,
         freq_min=params["freq_min"],
@@ -98,6 +94,22 @@ def make_template_library(recording_raw, templates_folder):
         radius_um=params["whitening_radius_um"],
         seed=seed,
     )
+
+    return recording
+    
+
+def make_template_library(recording_raw, templates_folder):
+
+    verbose = True
+
+    params = _default_params
+
+    seed = 1205
+
+    num_chans = recording_raw.get_num_channels()
+    sampling_frequency = recording_raw.get_sampling_frequency()
+
+    recording = preprocess_recording(recording_raw, params, seed)
 
     noise_levels = get_noise_levels(
         recording, return_in_uV=False, random_slices_kwargs=dict(seed=seed)
@@ -255,47 +267,70 @@ def make_template_library(recording_raw, templates_folder):
 
     templates.to_zarr(templates_folder)
 
-    # template_matching = False
+def do_template_matching(recording_raw, templates_folder, sorter_output_folder):
 
-    # if template_matching:
+    sampling_frequency = recording_raw.get_sampling_frequency()
 
-    #     # Template matching
-    #     gather_mode = params["gather_mode"]
-    #     pipeline_kwargs = dict(gather_mode=gather_mode)
-    #     spikes = find_spikes_from_templates(
-    #         recording,
-    #         templates,
-    #         method=params["template_matching_engine"],
-    #         method_kwargs={},
-    #         pipeline_kwargs=pipeline_kwargs,
-    #         job_kwargs={},
-    #     )
+    templates = si.load(templates_folder)
 
-    #     final_spikes = np.zeros(spikes.size, dtype=minimum_spike_dtype)
-    #     final_spikes["sample_index"] = spikes["sample_index"]
-    #     final_spikes["unit_index"] = spikes["cluster_index"]
-    #     final_spikes["segment_index"] = spikes["segment_index"]
-    #     sorting = NumpySorting(final_spikes, sampling_frequency, templates.unit_ids)
+    params = _default_params
+    seed = 1205
+
+    recording = preprocess_recording(recording_raw, params, seed)
+    recording, cache_info = cache_preprocessing(
+        recording,
+        mode=params["cache_preprocessing_mode"],
+        folder=sorter_output_folder / 'cache',
+    )
+    noise_levels = get_noise_levels(
+        recording, return_in_uV=False, random_slices_kwargs=dict(seed=seed)
+    )
+
+    template_matching = False
+
+    if template_matching:
+
+        # Template matching
+        gather_mode = params["gather_mode"]
+        pipeline_kwargs = dict(gather_mode=gather_mode)
+        spikes = find_spikes_from_templates(
+            recording,
+            templates,
+            method=params["template_matching_engine"],
+            method_kwargs={},
+            pipeline_kwargs=pipeline_kwargs,
+            job_kwargs={},
+        )
+
+        final_spikes = np.zeros(spikes.size, dtype=minimum_spike_dtype)
+        final_spikes["sample_index"] = spikes["sample_index"]
+        final_spikes["unit_index"] = spikes["cluster_index"]
+        final_spikes["segment_index"] = spikes["segment_index"]
+        sorting = NumpySorting(final_spikes, sampling_frequency, templates.unit_ids)
 
 
-    #     analyzer_final = final_cleaning_circus(
-    #         recording,
-    #         sorting,
-    #         templates,
-    #         amplitude_scalings=spikes["amplitude"],
-    #         noise_levels=noise_levels,
-    #         similarity_kwargs={
-    #             "method": "l1",
-    #             "support": "union",
-    #             "max_lag_ms": params["merge_similarity_lag_ms"],
-    #         },
-    #         sparsity_overlap=0.5,
-    #         censor_ms=3.0,
-    #         max_distance_um=50,
-    #         template_diff_thresh=np.arange(0.05, 0.4, 0.05),
-    #         debug_folder=None,
-    #         job_kwargs={},
-    #     )
+        analyzer_final = final_cleaning_circus(
+            recording,
+            sorting,
+            templates,
+            amplitude_scalings=spikes["amplitude"],
+            noise_levels=noise_levels,
+            similarity_kwargs={
+                "method": "l1",
+                "support": "union",
+                "max_lag_ms": params["merge_similarity_lag_ms"],
+            },
+            sparsity_overlap=0.5,
+            censor_ms=3.0,
+            max_distance_um=50,
+            template_diff_thresh=np.arange(0.05, 0.4, 0.05),
+            debug_folder=None,
+            job_kwargs={},
+        )
 
-    #     analyzer_final._recording = recording
-    #     analyzer_final.save_as(format="binary_folder", folder=sorter_output_folder / "analyzer")
+        analyzer_final._recording = recording
+        analyzer_final.save_as(format="binary_folder", folder=sorter_output_folder / "lupin_temp_analyzer")
+
+        clean_cache_preprocessing(cache_info)
+
+        return analyzer_final
