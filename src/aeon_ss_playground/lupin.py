@@ -51,7 +51,7 @@ _default_params = {
     "merge_similarity_lag_ms": 0.5,
     "freq_min": 150.0,
     "freq_max": 7000.0,
-    "cache_preprocessing_mode": "auto",
+    "cache_preprocessing_mode": "folder",
     "peak_sign": "neg",
     "detect_threshold": 5.0,
     "n_peaks_per_channel": 5000,
@@ -286,51 +286,47 @@ def do_template_matching(recording_raw, templates_folder, sorter_output_folder):
         recording, return_in_uV=False, random_slices_kwargs=dict(seed=seed)
     )
 
-    template_matching = False
+    # Template matching
+    gather_mode = params["gather_mode"]
+    pipeline_kwargs = dict(gather_mode=gather_mode)
+    spikes = find_spikes_from_templates(
+        recording,
+        templates,
+        method=params["template_matching_engine"],
+        method_kwargs={},
+        pipeline_kwargs=pipeline_kwargs,
+        job_kwargs={},
+    )
 
-    if template_matching:
-
-        # Template matching
-        gather_mode = params["gather_mode"]
-        pipeline_kwargs = dict(gather_mode=gather_mode)
-        spikes = find_spikes_from_templates(
-            recording,
-            templates,
-            method=params["template_matching_engine"],
-            method_kwargs={},
-            pipeline_kwargs=pipeline_kwargs,
-            job_kwargs={},
-        )
-
-        final_spikes = np.zeros(spikes.size, dtype=minimum_spike_dtype)
-        final_spikes["sample_index"] = spikes["sample_index"]
-        final_spikes["unit_index"] = spikes["cluster_index"]
-        final_spikes["segment_index"] = spikes["segment_index"]
-        sorting = NumpySorting(final_spikes, sampling_frequency, templates.unit_ids)
+    final_spikes = np.zeros(spikes.size, dtype=minimum_spike_dtype)
+    final_spikes["sample_index"] = spikes["sample_index"]
+    final_spikes["unit_index"] = spikes["cluster_index"]
+    final_spikes["segment_index"] = spikes["segment_index"]
+    sorting = NumpySorting(final_spikes, sampling_frequency, templates.unit_ids)
 
 
-        analyzer_final = final_cleaning_circus(
-            recording,
-            sorting,
-            templates,
-            amplitude_scalings=spikes["amplitude"],
-            noise_levels=noise_levels,
-            similarity_kwargs={
-                "method": "l1",
-                "support": "union",
-                "max_lag_ms": params["merge_similarity_lag_ms"],
-            },
-            sparsity_overlap=0.5,
-            censor_ms=3.0,
-            max_distance_um=50,
-            template_diff_thresh=np.arange(0.05, 0.4, 0.05),
-            debug_folder=None,
-            job_kwargs={},
-        )
+    analyzer_final = final_cleaning_circus(
+        recording,
+        sorting,
+        templates,
+        amplitude_scalings=spikes["amplitude"],
+        noise_levels=noise_levels,
+        similarity_kwargs={
+            "method": "l1",
+            "support": "union",
+            "max_lag_ms": params["merge_similarity_lag_ms"],
+        },
+        sparsity_overlap=0.5,
+        censor_ms=3.0,
+        max_distance_um=50,
+        template_diff_thresh=np.arange(0.05, 0.4, 0.05),
+        debug_folder=None,
+        job_kwargs={},
+    )
 
-        analyzer_final._recording = recording
-        analyzer_final.save_as(format="binary_folder", folder=sorter_output_folder / "lupin_temp_analyzer")
+    analyzer_final._recording = recording
+    analyzer_final.save_as(format="binary_folder", folder=sorter_output_folder / "lupin_temp_analyzer")
 
-        clean_cache_preprocessing(cache_info)
+    clean_cache_preprocessing(cache_info)
 
-        return analyzer_final
+    return analyzer_final
