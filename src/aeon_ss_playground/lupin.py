@@ -12,6 +12,8 @@ from spikeinterface.core import (
     get_noise_levels,
 )
 
+from spikeinterface.sortingcomponents.tools import create_sorting_analyzer_with_existing_templates
+
 from spikeinterface.core.base import minimum_spike_dtype
 
 # STEP 2
@@ -304,26 +306,9 @@ def do_template_matching(recording_raw, templates_folder, sorter_output_folder):
     final_spikes["segment_index"] = spikes["segment_index"]
     sorting = NumpySorting(final_spikes, sampling_frequency, templates.unit_ids)
 
-
-    analyzer_final = final_cleaning_circus(
-        recording,
-        sorting,
-        templates,
-        amplitude_scalings=spikes["amplitude"],
-        noise_levels=noise_levels,
-        similarity_kwargs={
-            "method": "l1",
-            "support": "union",
-            "max_lag_ms": params["merge_similarity_lag_ms"],
-        },
-        sparsity_overlap=0.5,
-        censor_ms=3.0,
-        max_distance_um=50,
-        template_diff_thresh=np.arange(0.05, 0.4, 0.05),
-        debug_folder=None,
-        job_kwargs={},
+    analyzer_final = create_sorting_analyzer_with_existing_templates(
+        sorting, recording, templates, noise_levels=noise_levels,
     )
-
     analyzer_final._recording = recording
     analyzer_final.save_as(format="binary_folder", folder=sorter_output_folder / "lupin_temp_analyzer")
 
