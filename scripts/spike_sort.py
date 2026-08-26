@@ -32,6 +32,8 @@ generic_postprocessing = {
     "template_metrics": {},
 }
 
+do_blackbox_sorting = True
+
 if experiment == "abcEphys01":
     root = Path("/ceph/aeon/aeon/data/raw/AEONX1/abcEphys01")
 
@@ -52,6 +54,8 @@ if sorter_protocol == "lupin_T":
 
     quit()
 
+
+
 elif sorter_protocol == "lupin_TM":
     from aeon_ss_playground.lupin import do_template_matching
 
@@ -61,39 +65,42 @@ elif sorter_protocol == "lupin_TM":
     preprocessed_recording_for_analyzer = old_analyzer._recording
     sorting = old_analyzer.sorting
 
-
-if si_sorter_name == "dartsort":
-
-    import dartsort
-
-    tmp_dir = Path("dartsort_tempo_4")
-    tmp_dir.mkdir(exist_ok=True)
-
-    dartsort_result = dartsort.dartsort(
-        rec,
-        sorter_output_folder,
-        cfg=dartsort.DARTsortUserConfig(
-            preprocessing="ibllikecmr",
-            do_motion_estimation=False,
-            save_intermediates=True,
-            tmpdir_parent=str(tmp_dir),
-            copy_recording_to_tmpdir="yes",
-            work_in_tmpdir=True,
-        ),
-    )
-
-elif si_sorter_name == "kilosort4":
-
-    sorter_output = sorter_output_folder / 'kilosort4_si_output'
-    sorting = si.run_sorter(sorter_name=si_sorter_name, recording=rec, do_correction=False, use_binary_file=False, verbose=True, remove_existing_folder=True, folder=sorter_output)
-    
-elif si_sorter_name == "lupin":
-
-    sorter_output = sorter_output_folder / 'lupin_si_output'
-    sorting = si.run_sorter(sorter_name=si_sorter_name, recording=rec, apply_motion_correction=False, verbose=True, remove_existing_folder=True, folder=sorter_output)
+    do_blackbox_sorting = False
 
 
-preprocessed_recording_for_analyzer = si.common_reference(si.bandpass_filter(si.unsigned_to_signed(rec)))
+if do_blackbox_sorting:
+
+    if si_sorter_name == "dartsort":
+
+        import dartsort
+
+        tmp_dir = Path("dartsort_tempo_4")
+        tmp_dir.mkdir(exist_ok=True)
+
+        dartsort_result = dartsort.dartsort(
+            rec,
+            sorter_output_folder,
+            cfg=dartsort.DARTsortUserConfig(
+                preprocessing="ibllikecmr",
+                do_motion_estimation=False,
+                save_intermediates=True,
+                tmpdir_parent=str(tmp_dir),
+                copy_recording_to_tmpdir="yes",
+                work_in_tmpdir=True,
+            ),
+        )
+
+    elif si_sorter_name == "kilosort4":
+
+        sorter_output = sorter_output_folder / 'kilosort4_si_output'
+        sorting = si.run_sorter(sorter_name=si_sorter_name, recording=rec, do_correction=False, use_binary_file=False, verbose=True, remove_existing_folder=True, folder=sorter_output)
+        
+    elif si_sorter_name == "lupin":
+
+        sorter_output = sorter_output_folder / 'lupin_si_output'
+        sorting = si.run_sorter(sorter_name=si_sorter_name, recording=rec, apply_motion_correction=False, verbose=True, remove_existing_folder=True, folder=sorter_output)
+
+    preprocessed_recording_for_analyzer = si.common_reference(si.bandpass_filter(si.unsigned_to_signed(rec)))
 
 analyzer = si.create_sorting_analyzer(
     sorting=sorting,
