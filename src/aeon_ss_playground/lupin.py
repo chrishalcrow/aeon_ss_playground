@@ -1,3 +1,5 @@
+import shutil
+
 from copy import deepcopy
 
 import numpy as np
@@ -278,11 +280,14 @@ def do_template_matching(recording_raw, templates_folder, sorter_output_folder):
     params = _default_params
     seed = 1205
 
+    cache_folder = sorter_output_folder / 'cache'
+
     recording = preprocess_recording(recording_raw, params, seed)
+    shutil.rmtree(cache_folder, ignore_errors=True)
     recording, cache_info = cache_preprocessing(
         recording,
         mode=params["cache_preprocessing_mode"],
-        folder=sorter_output_folder / 'cache',
+        folder=cache_folder,
     )
     noise_levels = get_noise_levels(
         recording, return_in_uV=False, random_slices_kwargs=dict(seed=seed)
