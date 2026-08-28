@@ -59,7 +59,8 @@ if sorter_protocol == "lupin_T":
 elif sorter_protocol == "lupin_TM":
     from aeon_ss_playground.lupin import do_template_matching
 
-    templates_folder = Path("/ceph/scratch/chalcrow/fromgit/aeon_ss_playground/lupin_si_output/2026-06-26T12-00-00_2026-06-27T12-00-00/shank_2/templates.zarr")
+    #templates_folder = Path("/ceph/scratch/chalcrow/fromgit/aeon_ss_playground/lupin_si_output/2026-06-26T12-00-00_2026-06-27T12-00-00/shank_2/templates.zarr")
+    templates_folder = Path("/ceph/scratch/chalcrow/fromgit/aeon_ss_playground/lupin_si_output/2026-06-26T12-00-00_2026-07-06T12-00-00/shank_2/templates.zarr")
 
     old_analyzer: si.SortingAnalyzer = do_template_matching(rec, templates_folder, sorter_output_folder)
     preprocessed_recording_for_analyzer = old_analyzer._recording
@@ -111,5 +112,4 @@ analyzer = si.create_sorting_analyzer(
     radius_um=70,
 )
 
-
-
+analyzer.compute(generic_postprocessing)
