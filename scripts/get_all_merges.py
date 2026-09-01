@@ -20,7 +20,6 @@ for date_path in date_paths:
 
     except:
         continue
-    
 
-with open("data.json", "w") as file:
+with open("all_merge_decisions.json", "w") as file:
     json.dump(curation_decisions, file, default=int, indent=4)
