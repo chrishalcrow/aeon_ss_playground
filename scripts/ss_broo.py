@@ -9,8 +9,8 @@ probe_name = "ProbeB"
 shank_id = 2
 sorter_protocol = "lupin_TM"
 
-start = datetime.strptime("2026-06-26 13:30:00", "%Y-%m-%d %H:%M:%S")
-end = datetime.strptime("2026-06-27 12:00:00", "%Y-%m-%d %H:%M:%S")
+start = datetime.strptime("2026-07-01 12:00:00", "%Y-%m-%d %H:%M:%S")
+end = datetime.strptime("2026-07-06 12:00:00", "%Y-%m-%d %H:%M:%S")
 # 2026 07 06 12:00
 step = timedelta(minutes=30)
 
