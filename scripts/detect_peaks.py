@@ -28,6 +28,9 @@ peak_output_folder = output_folder / Path(f"{start_time:%Y-%m-%dT%H-%M-%S}_{end_
 peak_output_folder.mkdir(parents=True, exist_ok=True)
 
 recording_raw = load_recording(root, start_time, end_time, probe_name="ProbeB", shank_id=shank_id)
+
+print(recording_raw)
+
 si.set_global_job_kwargs(n_jobs=cores)
 
 num_chans = recording_raw.get_num_channels()
