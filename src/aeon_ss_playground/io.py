@@ -49,12 +49,7 @@ def load_recording(
     start_index = max(0,int(paths["start"].searchsorted(start) - 1))
     end_index = int(paths["end"].searchsorted(end)+1)
 
-    print(f"{start_index=}")
-    print(f"{end_index=}")
-   
-
     ephys_paths: np.ndarray[str] = paths.iloc[start_index:end_index]["path"].values
-    print(ephys_paths)
 
     paths_start_time: datetime.datetime = pd.to_datetime(paths.iloc[start_index]["start"])
     paths_end_time: datetime.datetime = pd.to_datetime(paths.iloc[end_index-1]["end"])
@@ -65,14 +60,11 @@ def load_recording(
     end_time = end - paths_start_time
     end_frame = round(end_time.total_seconds() * sampling_frequency)
 
-    print(f"{start=}, {paths_start_time=}, {end_time=}, {end=}")
-
     probe = pi.read_probeinterface(path_to_probe)
 
     recs: list[si.BaseRecording] = []
     for path_index, ephys_path in zip(range(start_index, end_index), ephys_paths, strict=True):
 
-#        print(path_index, ephys_path, flush=True)
 
         path_start_time: datetime.datetime = pd.to_datetime(paths.loc[path_index]["start"])
         path_end_time: datetime.datetime = pd.to_datetime(paths.loc[path_index]["end"])
