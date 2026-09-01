@@ -5,11 +5,11 @@ from spikeinterface.sortingcomponents.peak_detection import detect_peaks
 from spikeinterface.sortingcomponents.peak_localization import localize_peaks
 from spikeinterface.core import get_noise_levels
 
-from aeon_ss_playground.broo_parser import parse_args
+from aeon_ss_playground.broo_parser import peak_parse_args
 from aeon_ss_playground.io import load_recording
 import spikeinterface.full as si
 
-args = parse_args()
+args = peak_parse_args()
 
 experiment = args.experiment
 probe_name = args.probe_name
@@ -21,6 +21,8 @@ cores = args.cores
 
 if experiment == "abcEphys01":
     root = Path("/ceph/aeon/aeon/data/raw/AEONX1/abcEphys01")
+else:
+    raise FileNotFoundError('No root given!!!!')
 
 peak_output_folder = output_folder / Path(f"{start_time:%Y-%m-%dT%H-%M-%S}_{end_time:%Y-%m-%dT%H-%M-%S}/shank_{shank_id}/peaks")
 peak_output_folder.mkdir(parents=True, exist_ok=True)
