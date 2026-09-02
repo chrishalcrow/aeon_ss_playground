@@ -2,19 +2,18 @@ from pathlib import Path
 from aeon_ss_playground.lupin import do_template_matching
 import spikeinterface.full as si
 
+shank_id = 2
+
 output_folder = Path('')
-global_info_folder = output_folder / 'global_info'
+global_info_folder = output_folder / f'shank_{shank_id}/global_info'
 
-recording_paths = [
-    '',
-]
-
-recording_path = recording_paths[0]
+recording_path = Path('path/to/recording')
 recording = si.read_spikeglx(recording_path)
 
-templates_folder = global_info_folder / "templates.zarr"
+templates_folder = global_info_folder / f"templates_shank_{shank_id}.zarr"
 
-sorter_output_folder = output_folder / 'rec_1'
+# The end of this should be a folder name related to the input recording path
+sorter_output_folder = output_folder / f'shank_{shank_id}/{recording_path.name}'
 
 old_analyzer: si.SortingAnalyzer = do_template_matching(recording, templates_folder, sorter_output_folder)
 preprocessed_recording_for_analyzer = old_analyzer._recording
