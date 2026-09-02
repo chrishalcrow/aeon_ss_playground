@@ -2,6 +2,8 @@ from pathlib import Path
 from aeon_ss_playground.lupin import make_template_library
 import spikeinterface.full as si
 
+si.set_global_job_kwargs(n_jobs=8)
+
 shank_id = 2
 
 # modify for where you want to put the output

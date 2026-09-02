@@ -2,6 +2,8 @@ from pathlib import Path
 from aeon_ss_playground.lupin import do_template_matching
 import spikeinterface.full as si
 
+si.set_global_job_kwargs(n_jobs=8)
+
 shank_id = 2
 
 output_folder = Path('')
