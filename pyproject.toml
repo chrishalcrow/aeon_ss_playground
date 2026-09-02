@@ -18,3 +18,4 @@ build-backend = "setuptools.build_meta"
 
 [tool.uv.sources]
 broo-helper = { git = "https://github.com/chrishalcrow/broo_helper.git" }
+spikeinterface = { git = "https://github.com/spikeinterface/spikeinterface" }
