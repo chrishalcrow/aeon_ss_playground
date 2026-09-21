@@ -75,16 +75,16 @@ def parse_args():
         help="Name of the probe",
     )
     parser.add_argument(
-        "--start-time",
-        type=pd.to_datetime,
+        "--start-index",
+        type=int,
         required=True,
-        help="Start datetime in ISO format or parseable string",
+        help="Start rec index",
     )
     parser.add_argument(
-        "--end-time",
-        type=pd.to_datetime,
+        "--end-index",
+        type=int,
         required=True,
-        help="End datetime in ISO format or parseable string",
+        help="End rec index (NOT inclusive)",
     )
     parser.add_argument(
         "--sorter-protocol",
