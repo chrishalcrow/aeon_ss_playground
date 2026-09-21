@@ -31,18 +31,24 @@ def load_recording(
         shank_id: None | int = None, 
         probe_name: str = "ProbeB",
         all_channels=True,
+        experiment_name=None,
+        use_blocks=False,
     ) -> si.BaseRecording:
 
     sampling_frequency = 30_000
     gain_to_uV = 3.05176
     offset_to_uV = -2048 * gain_to_uV
 
-    if probe_name == "ProbeB":
-        path_to_ephys_paths = Path("abcEphys01_B_ephys_paths.csv")
-        path_to_probe = Path("/ceph/aeon/aeon/data/raw/AEONX1/abcEphys01/2026-06-25T090547Z/M01_ProbeB_4Shanks_2000_to_2700um_LFP.json")
-    if probe_name == "ProbeA":
-        path_to_ephys_paths = Path("abcEphys01_A_ephys_paths.csv")
-        path_to_probe = Path("/ceph/aeon/aeon/data/raw/AEONX1/abcEphys01/2026-06-25T090547Z/M01_ProbeA_4Shanks_1500_to_2200um.json")
+    if experiment_name == 'ProjectAeonOVC':
+        path_to_ephys_paths = Path("rokas_paths.csv")
+        path_to_probe = 'probe_output_test.json'
+    else:
+        if probe_name == "ProbeB":
+            path_to_ephys_paths = Path("abcEphys01_B_ephys_paths.csv")
+            path_to_probe = Path("/ceph/aeon/aeon/data/raw/AEONX1/abcEphys01/2026-06-25T090547Z/M01_ProbeB_4Shanks_2000_to_2700um_LFP.json")
+        if probe_name == "ProbeA":
+            path_to_ephys_paths = Path("abcEphys01_A_ephys_paths.csv")
+            path_to_probe = Path("/ceph/aeon/aeon/data/raw/AEONX1/abcEphys01/2026-06-25T090547Z/M01_ProbeA_4Shanks_1500_to_2200um.json")
 
     paths = pd.read_csv(path_to_ephys_paths, parse_dates=["start", "end"])
 
@@ -62,15 +68,19 @@ def load_recording(
 
     probe = pi.read_probeinterface(path_to_probe)
 
+    if experiment_name == 'ProjectAeonOVC':
+        probe.set_global_device_channel_indices(np.arange(384).astype('int'))
+
     recs: list[si.BaseRecording] = []
     for path_index, ephys_path in zip(range(start_index, end_index), ephys_paths, strict=True):
-
 
         path_start_time: datetime.datetime = pd.to_datetime(paths.loc[path_index]["start"])
         path_end_time: datetime.datetime = pd.to_datetime(paths.loc[path_index]["end"])
         expected_num_frames = int((path_end_time - path_start_time).total_seconds() * sampling_frequency)
         
         if ephys_path == 'blank':
+            if use_blocks:
+                continue
             rec_to_mock = recs[0]
             rec = generate_mock_zero_recording(rec_to_mock, expected_num_frames, probe)
         else:
@@ -86,7 +96,7 @@ def load_recording(
             if rec.get_num_samples() != 18_000_000:
                 print(f"{rec.get_num_samples()=}")
             # rec should be 10 mins but it's missing some samples...
-            if expected_num_frames == 18_000_000 and rec.get_num_samples() != expected_num_frames:
+            if expected_num_frames == 18_000_000 and rec.get_num_samples() != expected_num_frames and not use_blocks:
                 print(f"{expected_num_frames=}")
                 print(f"{paths_end_time=}")
                 print(f"{paths_start_time=}")
@@ -98,7 +108,9 @@ def load_recording(
         
     rec: si.BaseRecording = si.concatenate_recordings(recs)
 
-    rec: si.BaseRecording = rec.frame_slice(start_frame=start_frame, end_frame=end_frame)
+    if not use_blocks:
+        rec: si.BaseRecording = rec.frame_slice(start_frame=start_frame, end_frame=end_frame)
+    
     rec.set_probegroup(probegroup=probe, in_place=True)
     
     if not all_channels:
