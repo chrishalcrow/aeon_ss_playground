@@ -3,11 +3,122 @@ import pandas as pd
 from pathlib import Path
 import numpy as np
 
+from typing import Literal
+
 import probeinterface as pi
 import spikeinterface.full as si
 
 from spikeinterface.core.base import base_period_dtype
 from spikeinterface.core.generate import MockRecording
+
+ceph_aeon_raw_path = Path('/run/user/1001/gvfs/smb-share:server=ceph-gw02.hpc.swc.ucl.ac.uk,share=aeon/aeon/data/raw')
+rec_folders_path = Path('/home/chris/fromgit/ingest_aeon')
+
+experiment_details = {
+    
+    'ProjectAeonOVC': {
+        'ProbeA': {
+            'probe_path': 'probe_output_test.json',
+            'rec_list_path': rec_folders_path / 'rec_list_ProjectAeonOVC_ProbeA.csv',
+            'dtype': np.int16,
+        }
+    },
+
+    'abcEphys01' :{
+        'ProbeA': {
+            'probe_path': ceph_aeon_raw_path / 'AEONX1/abcEphys01/2026-06-25T090547Z/M01_ProbeA_4Shanks_1500_to_2200um.json',
+            'rec_list_path': rec_folders_path / 'rec_list_abcEphys01_ProbeA.csv',
+            'dtype': np.uint16,
+        },
+        'ProbeB': {
+            'probe_path': ceph_aeon_raw_path / 'AEONX1/abcEphys01/2026-06-25T090547Z/M01_ProbeB_4Shanks_2000_to_2700um_LFP.json',
+            'rec_list_path': rec_folders_path / 'rec_list_abcEphys01_ProbeB.csv',
+            'dtype': np.uint16,
+        },
+    },
+
+    'abcEphysPilot02' :{
+        'ProbeB': {
+            'probe_path': ceph_aeon_raw_path / 'AEONX1/abcEphysPilot02/2026-05-05T15-15-51/M81_ProbeB_4Shanks_1000_to_1700_um.json',
+            'rec_list_path': rec_folders_path / 'rec_list_abcEphysPilot02_ProbeB.csv',
+            'dtype': np.uint16,
+        },
+    },
+
+    'abcEphysPilot03' :{
+        'ProbeA': {
+            'probe_path': ceph_aeon_raw_path / 'AEONX1/abcEphysPilot03/2026-05-13T07-13-57/M82_ProbeA_4Shanks_1000_to_1700_um.json',
+            'rec_list_path': rec_folders_path / 'rec_list_abcEphysPilot03_ProbeA.csv',
+            'dtype': np.uint16,
+        },
+        'ProbeB': {
+            'probe_path': ceph_aeon_raw_path / 'AEONX1/abcEphysPilot03/2026-05-13T07-13-57/M82_ProbeB_3Shanks_2500_to_3200_um_S1_2x_LFP.json',
+            'rec_list_path': rec_folders_path / 'rec_list_abcEphysPilot03_ProbeB.csv',
+            'dtype': np.uint16,
+        },
+    },
+
+    'abcEphysPilot04' :{
+        'ProbeA': {
+            'probe_path': ceph_aeon_raw_path / 'AEONX1/abcEphysPilot04/2026-05-16T10-21-23/M82_ProbeA_4Shanks_1000_to_1700_um.json',
+            'rec_list_path': rec_folders_path / 'rec_list_abcEphysPilot04_ProbeA.csv',
+            'dtype': np.uint16,
+        },
+        'ProbeB': {
+            'probe_path': ceph_aeon_raw_path / 'AEONX1/abcEphysPilot04/2026-05-16T10-21-23/M82_ProbeB_3Shanks_2500_to_3200_um_S1_2x_LFP.json',
+            'rec_list_path': rec_folders_path / 'rec_list_abcEphysPilot04_ProbeB.csv',
+            'dtype': np.uint16,
+        },
+    },
+
+    'abcGolden01' :{
+        'ProbeB': {
+            'probe_path': ceph_aeon_raw_path / 'AEONX1/abcGolden01/2026-05-11T07-50-11/M81_ProbeB_4Shanks_1000_to_1700_um.json',
+            'rec_list_path': rec_folders_path / 'rec_list_abcGolden01_ProbeB.csv',
+            'dtype': np.uint16,
+        },
+    },
+
+
+}
+
+def read_ephys(
+    experiment_name: Literal['ProjectAeonOVC', 'abcEphys01', 'abcEphysPilot02', 'abcEphysPilot03', 'abcEphysPilot04', 'abcGolden01'],
+    probe_name,
+    start_index,
+    end_index,
+    shank_id=None,
+):
+
+    path_to_probe = Path(experiment_details[experiment_name][probe_name]['probe_path'])
+    probe = pi.read_probeinterface(path_to_probe)
+
+    rec_paths_path = Path(experiment_details[experiment_name][probe_name]['rec_list_path'])
+    rec_paths = pd.read_csv(rec_paths_path)
+    selected_rec_paths = rec_paths.query(f'rec_index >= {start_index} & rec_index < {end_index}')['rec_path'].values
+    paths_on_ceph = [ceph_aeon_raw_path / selected_path for selected_path in selected_rec_paths]
+
+    dtype = experiment_details[experiment_name][probe_name]['dtype']
+
+    raw_rec = si.concatenate_recordings(
+        [
+            si.read_binary(
+                rec_path, sampling_frequency=30_000, num_channels=384, dtype=dtype, gain_to_uV=3.05176, offset_to_uV = 0
+            )
+            for rec_path in paths_on_ceph
+        ]
+    )
+
+    raw_rec.set_probegroup(probe)
+
+    if shank_id is None:
+        rec_shank = raw_rec
+
+    if shank_id is not None:
+        rec_shank = raw_rec.split_by('group')[shank_id]
+    
+    return rec_shank
+
 
 def generate_mock_zero_recording(rec_to_mock: si.BaseRecording, total_frames, probe):
 
