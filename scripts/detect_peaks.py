@@ -36,7 +36,11 @@ si.set_global_job_kwargs(n_jobs=cores)
 num_chans = recording_raw.get_num_channels()
 sampling_frequency = recording_raw.get_sampling_frequency()
 
-pp_rec = si.astype(si.common_reference(si.bandpass_filter(recording_raw)), dtype='float32')
+pp_rec = si.astype(
+    si.common_reference(
+        si.bandpass_filter(recording_raw),
+    operator='average'),
+dtype='float32')
 
 noise_levels = get_noise_levels(pp_rec, return_in_uV=False)
 

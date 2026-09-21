@@ -9,7 +9,7 @@ date_paths = list(lupin_TM_path.glob('2026*'))
 
 for date_path in date_paths:
 
-    print(f"doing {date_path}")
+    print(f"doing {date_path}", flush=True)
 
     try:
         analyzer_path = date_path / 'shank_2/analyzer'

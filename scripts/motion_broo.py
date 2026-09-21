@@ -10,14 +10,14 @@ shank_id = 2
 
 experiment_start = datetime.strptime("2026-06-25 09:05:47", "%Y-%m-%d %H:%M:%S")
 experiment_end = datetime.strptime("2026-07-11 11:53:54", "%Y-%m-%d %H:%M:%S")
+#experiment_end = datetime.strptime("2026-06-26 00:00:00", "%Y-%m-%d %H:%M:%S") 
+
+num_days = (experiment_end.date() - experiment_start.date()).days + 1
 
 gpu=False
 gpu_queue=False
-cores=8
+cores=4
 output_folder =  Path("detect_output")
-
-# Total number of calendar days spanned
-num_days = (experiment_end.date() - experiment_start.date()).days + 1
 
 for i in range(num_days):
     current_date = experiment_start.date() + timedelta(days=i)
@@ -27,23 +27,19 @@ for i in range(num_days):
     day_midnight_end = datetime.combine(current_date + timedelta(days=1), time.min)
 
     # Clip to experiment bounds
-    start_time = max(day_midnight_start, experiment_start).strftime("%Y-%m-%d %H:%M:%S")
-    end_time = min(day_midnight_end, experiment_end).strftime("%Y-%m-%d %H:%M:%S")
+    segment_start = max(day_midnight_start, experiment_start)
+    segment_end = min(day_midnight_end, experiment_end)
 
-    missing_dates = [
-        "2026-07-02 00:00:00",
-        "2026-07-03 00:00:00",
-        "2026-07-08 00:00:00",
-        "2026-07-09 00:00:00",
-        "2026-07-10 00:00:00",
-    ]
+    start_time = segment_start.strftime("%Y-%m-%d %H:%M:%S")
+    end_time = segment_end.strftime("%Y-%m-%d %H:%M:%S")
 
-    print(start_time, start_time in missing_dates)
-
-    if start_time not in missing_dates:
+    if start_time == end_time:
         continue
 
-    python_arg = f"""scripts/detect_peaks.py \
+    print(f"{start_time=}")
+    print(f"{end_time=}")
+
+    python_arg = f"""scripts/compute_motion.py \
     --experiment {experiment} \
     --probe-name {probe_name} \
     --shank-id {shank_id} \
@@ -54,9 +50,9 @@ for i in range(num_days):
     """
 
     make_and_run_python_script(
-        "detect", 
+        "motion", 
         python_arg, 
-        hours=24,
+        hours=1,
         mem=32,
         cores=cores, 
         gpu=gpu, 
