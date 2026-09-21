@@ -1,15 +1,15 @@
 from pathlib import Path
 
 from aeon_ss_playground.broo_parser import parse_args
-from aeon_ss_playground.io import load_recording
+from aeon_ss_playground.io import load_recording, read_ephys
 import spikeinterface.full as si
 
 args = parse_args()
 
 experiment = args.experiment
 probe_name = args.probe_name
-start_time = args.start_time
-end_time = args.end_time
+start_index = args.start_index
+end_index = args.end_index
 shank_id = args.shank_id
 sorter_protocol = args.sorter_protocol
 output_folder =  args.output_folder
@@ -42,14 +42,17 @@ if experiment == "abcEphys01":
 
 si_sorter_name = sorter_protocol.split('_')[0]
 
-sorter_output_folder = output_folder / Path(f"{start_time:%Y-%m-%dT%H-%M-%S}_{end_time:%Y-%m-%dT%H-%M-%S}/shank{shank_id}")
+sorter_output_folder = output_folder / Path(f"{start_index}_{end_index}/shank{shank_id}")
 sorter_output_folder.mkdir(parents=True, exist_ok=True)
 
-print(f"{start_time=}")
-print(f"{end_time=}")
 
-rec = load_recording(root, start_time, end_time, probe_name=probe_name, shank_id=shank_id, experiment_name=experiment, use_blocks=use_blocks)
-print(rec)
+rec = read_ephys(
+    experiment,
+    probe_name,
+    start_index,
+    end_index,
+    shank_id=shank_id,
+)
 
 si.set_global_job_kwargs(n_jobs=cores)
 
@@ -124,6 +127,7 @@ analyzer = si.create_sorting_analyzer(
     format = "binary_folder",
     peak_sign = "both",
     radius_um = 70,
+    lazy=True,
 )
 
 analyzer.compute(generic_postprocessing)
