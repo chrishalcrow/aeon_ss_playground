@@ -11,8 +11,8 @@ import spikeinterface.full as si
 from spikeinterface.core.base import base_period_dtype
 from spikeinterface.core.generate import MockRecording
 
-ceph_aeon_raw_path = Path('/run/user/1001/gvfs/smb-share:server=ceph-gw02.hpc.swc.ucl.ac.uk,share=aeon/aeon/data/raw')
-rec_folders_path = Path('/home/chris/fromgit/ingest_aeon')
+ceph_aeon_raw_path = Path('/ceph/aeon/aeon/data/raw')
+rec_folders_path = Path('/ceph/scratch/chalcrow/fromgit/rec_paths')
 
 experiment_details = {
     
@@ -108,6 +108,11 @@ def read_ephys(
             for rec_path in paths_on_ceph
         ]
     )
+
+    if experiment_name == 'ProjectAeonOVC':
+        probe.set_global_device_channel_indices(np.arange(384).astype('int'))
+    else:
+        raw_rec = si.unsigned_to_signed(raw_rec)
 
     raw_rec.set_probegroup(probe)
 

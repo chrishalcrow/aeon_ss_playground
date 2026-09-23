@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "broo-helper",
-    "dartsort>=0.5.23",
     "ipykernel>=7.3.0",
     "kilosort>=4.1.7",
     "spikeinterface>=0.104.8",
@@ -17,5 +16,5 @@ requires = ["setuptools>=78.0.2"]
 build-backend = "setuptools.build_meta"
 
 [tool.uv.sources]
-broo-helper = { git = "https://github.com/chrishalcrow/broo_helper.git" }
-spikeinterface = { git = "https://github.com/spikeinterface/spikeinterface" }
+spikeinterface = { path = "../spikeinterface" }
+broo-helper = { path = "../broo_helper" }
